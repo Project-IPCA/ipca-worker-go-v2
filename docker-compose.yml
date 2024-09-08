@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  ipca-worker-go-v2:
+    container_name: ipca-worker-go-v2
+    build: .
+    restart: on-failure
+    volumes:
+      - ./:/app/
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    env_file:
+      - .env
+    networks:
+      - programming-laboratory-management-system_default
+    privileged: true
+    cap_add:
+      - ALL
+    security_opt:
+      - seccomp:unconfined
+
+networks:
+  programming-laboratory-management-system_default:
+    external: true
