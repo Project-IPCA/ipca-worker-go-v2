@@ -2,13 +2,14 @@ package service
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/Project-IPCA/ipca-worker-go-v2/models"
 	"github.com/Project-IPCA/ipca-worker-go-v2/redis_client"
+
 	"github.com/Project-IPCA/ipca-worker-go-v2/repositories"
 	"github.com/Project-IPCA/ipca-worker-go-v2/utils"
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -34,13 +35,13 @@ func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 	exerciseTestcaseRepo := repositories.NewExcerciseTestCaseRePository(db_pool)
 	if(len(msgBody.TestCaseList)>0){
 		for i:=0; i<len(msgBody.TestCaseList); i++ {
-			testCaseInt,err := strconv.Atoi(msgBody.TestCaseList[i].TestCaseID)
+			testcaseUuid,err := uuid.Parse(msgBody.TestCaseList[i].TestCaseID)
 			if(err!=nil){
-				utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to write file", err.Error())
+				return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert testcase uuid", err.Error())
 			}
-			excerciseInt,err := strconv.Atoi(*msgBody.ExcerciseID)
+			exerciseUuid,err := uuid.Parse(*msgBody.ExcerciseID)
 			if(err!=nil){
-				utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to write file", err.Error())
+				return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert exercise uuid", err.Error())
 			}
 			result, err := utils.RunPythonScript(msgBody.TestCaseList[i], msgBody.SourceCode)
 			if err != nil {
@@ -48,35 +49,35 @@ func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 				if(ok){
 					fmt.Println("Error running Python script:", appErr)
 					errorMessage := string(appErr.Err.Error())
-					testCaseData := models.ExcerciseTestCaseOld{
-						TestCaseID: testCaseInt,
-						ExcerciseID: excerciseInt,
-						TestCaseContent: msgBody.TestCaseList[i].TestCaseContent,
-						IsReady: msgBody.TestCaseList[i].IsReady,
-						Active: &msgBody.TestCaseList[i].Active,
-						ShowToStudent: &msgBody.TestCaseList[i].ShowToStudent,
-						TestCaseNote: &msgBody.TestCaseList[i].TestCaseNote,
-						TestCaseOutput: &appErr.Stdout,
-						TestCaseError: &errorMessage,
+					testcaseData := models.ExerciseTestcase{
+						TestcaseID: &testcaseUuid,
+						ExerciseID: exerciseUuid,
+						TestcaseContent: msgBody.TestCaseList[i].TestCaseContent,
+						IsReady: "no",
+						IsActive: &msgBody.TestCaseList[i].Active,
+						IsShowStudent: &msgBody.TestCaseList[i].ShowToStudent,
+						TestcaseNote: &msgBody.TestCaseList[i].TestCaseNote,
+						TestcaseOutput: &appErr.Stdout,
+						TestcaseError: &errorMessage,
 					}
-					err = exerciseTestcaseRepo.UpdateTestCase(&testCaseData,excerciseInt)
+					err = exerciseTestcaseRepo.UpdateTestCase(&testcaseData,exerciseUuid)
 					if(err != nil){
 						utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to write file", err.Error())
 					}
 					for j:=i+1; j<len(msgBody.TestCaseList); j++{
 						errorText := "Error occurred before this testcase"
-						testCaseData := models.ExcerciseTestCaseOld{
-							TestCaseID: testCaseInt,
-							ExcerciseID: excerciseInt,
-							TestCaseContent: msgBody.TestCaseList[j].TestCaseContent,
-							IsReady: msgBody.TestCaseList[j].IsReady,
-							Active: &msgBody.TestCaseList[j].Active,
-							ShowToStudent: &msgBody.TestCaseList[j].ShowToStudent,
-							TestCaseNote: &msgBody.TestCaseList[j].TestCaseNote,
-							TestCaseOutput: &appErr.Stdout,
-							TestCaseError: &errorText,
+						testCaseData := models.ExerciseTestcase{
+							TestcaseID: &testcaseUuid,
+							ExerciseID: exerciseUuid,
+							TestcaseContent: msgBody.TestCaseList[i].TestCaseContent,
+							IsReady: "no",
+							IsActive: &msgBody.TestCaseList[i].Active,
+							IsShowStudent: &msgBody.TestCaseList[i].ShowToStudent,
+							TestcaseNote: &msgBody.TestCaseList[i].TestCaseNote,
+							TestcaseOutput: nil,
+							TestcaseError: &errorText,
 						}
-						err = exerciseTestcaseRepo.UpdateTestCase(&testCaseData,excerciseInt)
+						err = exerciseTestcaseRepo.UpdateTestCase(&testCaseData,exerciseUuid)
 						if(err != nil){
 							utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to write file", err.Error())
 						}
@@ -85,19 +86,20 @@ func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 				}
 			}else{
 				output := strings.TrimSpace(result)
-				testCaseData := models.ExcerciseTestCaseOld{
-					TestCaseID: testCaseInt,
-					ExcerciseID: excerciseInt,
-					TestCaseContent: msgBody.TestCaseList[i].TestCaseContent,
-					IsReady: msgBody.TestCaseList[i].IsReady,
-					Active: &msgBody.TestCaseList[i].Active,
-					ShowToStudent: &msgBody.TestCaseList[i].ShowToStudent,
-					TestCaseNote: &msgBody.TestCaseList[i].TestCaseNote,
-					TestCaseOutput: &output,
-					TestCaseError: nil,
+				fmt.Println("output : " + output)
+				testCaseData := models.ExerciseTestcase{
+					TestcaseID: &testcaseUuid,
+					ExerciseID: exerciseUuid,
+					TestcaseContent: msgBody.TestCaseList[i].TestCaseContent,
+					IsReady: "yes",
+					IsActive: &msgBody.TestCaseList[i].Active,
+					IsShowStudent: &msgBody.TestCaseList[i].ShowToStudent,
+					TestcaseNote: &msgBody.TestCaseList[i].TestCaseNote,
+					TestcaseOutput: &output,
+					TestcaseError: nil,
 				}
 
-				err = exerciseTestcaseRepo.UpdateTestCase(&testCaseData,excerciseInt)
+				err = exerciseTestcaseRepo.UpdateTestCase(&testCaseData,exerciseUuid)
 				if(err != nil){
 					utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to write file", err.Error())
 				}

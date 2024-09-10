@@ -11,7 +11,7 @@ type ReciveMessage struct {
 	JobType string `json:"job_type"`
 	LogData LogDataType `json:"log_data"`
 	SubmissionID *string `json:"submission_id"`
-	ExcerciseID *string `json:"excercise_id"`
+	ExcerciseID *string `json:"exercise_id"`
 	SourceCode string `json:"sourcecode"`
 	TestCaseList []TestCase `json:"testcase_list"`
 }
@@ -21,8 +21,8 @@ type TestCase struct{
 	ExceriseID string `json:"excerise_id"`
 	IsReady string `json:"is_ready"`
 	TestCaseContent string `json:"testcase_content"`
-	Active string `json:"active"`
-	ShowToStudent string `json:"show_to_student"`
+	Active bool `json:"is_active"`
+	ShowToStudent bool `json:"show_to_student"`
 	TestCaseNote string `json:"testcase_note"`
 	TestCaseOutput string `json:"testcase_output"`
 	TestCaseError string `json:"testcase_error"`

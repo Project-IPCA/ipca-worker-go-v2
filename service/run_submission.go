@@ -36,7 +36,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 	publisher := redis_client.NewRedisAction(redisClient)
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
 	excerciseSubmissionRepo := repositories.NewExcerciseSubmissionRePository(db_pool)
-	var publishLog *models.ActivityLogOld
+	var publishLog *models.ActivityLog
 
 	tempLog,err := compileCode(db_pool,msgBody);
 	publishLog = tempLog
@@ -118,7 +118,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 	channel.Ack(msg.DeliveryTag, false)
 }
 
-func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.ActivityLogOld,error){
+func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.ActivityLog,error){
 	submission_int,err := strconv.Atoi(*msgBody.SubmissionID)
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
 	excerciseSubmissionRepo := repositories.NewExcerciseSubmissionRePository(db_pool)
@@ -130,7 +130,7 @@ func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activ
 
 	testcaseResult := []TestCaseResult{}
 	newAction := msgBody.LogData.Actoin
-	insertedLog := models.ActivityLogOld{}
+	insertedLog := models.ActivityLog{}
 
 	if(len(msgBody.TestCaseList)>0){
 		for i, testcase := range msgBody.TestCaseList {
@@ -148,7 +148,7 @@ func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activ
 			testcaseResult = append(testcaseResult,TestCaseResult{
 				TestCaseNo: i+1,
 				IsPassed: passed,
-				ShowToStudent: testcase.ShowToStudent == "yes",
+				ShowToStudent: testcase.ShowToStudent,
 				Expected: strings.TrimSpace(testcase.TestCaseOutput),
 				Actual: strings.TrimSpace(result),
 			})
