@@ -3,9 +3,9 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 
@@ -35,7 +35,7 @@ type TestCaseResult struct{
 func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, msgBody models.ReciveMessage, redisClient *redis.Client){
 	publisher := redis_client.NewRedisAction(redisClient)
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
-	excerciseSubmissionRepo := repositories.NewExcerciseSubmissionRePository(db_pool)
+	excerciseSubmissionRepo := repositories.NewExerciseSubmissionRePository(db_pool)
 	var publishLog *models.ActivityLog
 
 	tempLog,err := compileCode(db_pool,msgBody);
@@ -45,13 +45,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 		if(ok && (appErr.Name == utils.ERROR_NAME.DATABASE_ERROR || appErr.Name == utils.ERROR_NAME.FUNCTION_ERROR)){
 			channel.Nack(msg.DeliveryTag,false,false)
 		}else{
-			submission_int,err := strconv.Atoi(*msgBody.SubmissionID)
 			newAction := msgBody.LogData.Actoin
-
-			if(err!=nil){
-				fmt.Println("fail to convert to int")
-				return 
-			}
 
 			var output interface{}
 
@@ -66,17 +60,22 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 				fmt.Println("Error marshalling testcaseResult:", err)
 				return 
 			}
+			outputStr := string(resultJson)
 			errorMessage := string(appErr.Err.Error())
 
 			marking := 0
 
-			rawResult := json.RawMessage(resultJson)
+			submissionUuid,err := uuid.Parse(*msgBody.SubmissionID)
+			if(err!=nil){
+				fmt.Println("fail to convert uuid")
+				return 
+			}
 
 			submission := models.UpdateSubmissionInfo{
-				SubmissionID: submission_int,
+				SubmissionID: submissionUuid,
 				Status: "error",
 				Marking: marking,
-				Result: &rawResult,
+				Result: &outputStr,
 				ErrorMessage: &errorMessage,
 			}
 
@@ -119,13 +118,17 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 }
 
 func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.ActivityLog,error){
-	submission_int,err := strconv.Atoi(*msgBody.SubmissionID)
+	submissionUuid,err := uuid.Parse(*msgBody.SubmissionID)
+	if(err!=nil){
+		fmt.Println("fail to convert uuid")
+		return nil,utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert uuid", err.Error())
+	}
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
-	excerciseSubmissionRepo := repositories.NewExcerciseSubmissionRePository(db_pool)
+	excerciseSubmissionRepo := repositories.NewExerciseSubmissionRePository(db_pool)
 
 	if(err!=nil){
 		fmt.Println("fail to convert to int")
-		return nil,utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to convert", err.Error())
+		return nil,utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert", err.Error())
 	}
 
 	testcaseResult := []TestCaseResult{}
@@ -173,17 +176,17 @@ func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activ
 			return nil,utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"Error marshalling testcaseResult", err.Error())
 		}
 
-		rawMessage := json.RawMessage(jsonData)
+		outputStr := string(jsonData)
 		status := "wrong_answer";
 		if(studentMarking == 2){
 			status = "accepted";
 		}
 
 		submission := models.UpdateSubmissionInfo{
-			SubmissionID: submission_int,
+			SubmissionID: submissionUuid,
 			Status: status,
 			Marking: studentMarking,
-			Result: &rawMessage,
+			Result: &outputStr,
 			ErrorMessage: nil,
 		}
 
@@ -218,15 +221,15 @@ func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activ
 			return nil,utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"Error marshalling testcaseResult", err.Error())
 		}
 
-		rawMessage := json.RawMessage(jsonData)
+		outputStr := string(jsonData)
 
 		studentMarking :=2
 
 		submission := models.UpdateSubmissionInfo{
-			SubmissionID: submission_int,
+			SubmissionID: submissionUuid,
 			Status: "accepted",
 			Marking: studentMarking,
-			Result: &rawMessage,
+			Result: &outputStr,
 			ErrorMessage: nil,
 		}
 

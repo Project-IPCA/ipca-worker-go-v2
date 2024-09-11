@@ -32,7 +32,9 @@ func (activityLogRepository ActivityLogRepository)AddSubmissionLog(log_data *mod
 	if(err!=nil){
 		return &models.ActivityLog{},utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to deserialize", err.Error())
 	}
+	logId := utils.NewULID()
 	add_Log := models.ActivityLog{
+		LogID: logId,
 		GroupID: &groupUuid,
 		Username: log_data.Username,
 		RemoteIP: log_data.RemoteIP,

@@ -6,32 +6,49 @@ import (
 	"gorm.io/gorm"
 )
 
-type ExcerciseSubmissionRepositoryQ interface{
+type ExerciseSubmissionRepositoryQ interface{
 	UpdateSubmission(submission_data *models.UpdateSubmissionInfo) error
 }
 
-type ExcerciseSubmissionRepository struct{
+type ExerciseSubmissionRepository struct{
 	DB *gorm.DB
 }
 
-func NewExcerciseSubmissionRePository(db *gorm.DB) *ExcerciseSubmissionRepository{
-	return &ExcerciseSubmissionRepository{
+func NewExerciseSubmissionRePository(db *gorm.DB) *ExerciseSubmissionRepository{
+	return &ExerciseSubmissionRepository{
 		DB: db,
 	}
 }
 
-func (excerciseSubmissionRepository ExcerciseSubmissionRepository)UpdateSubmission(submission_data *models.UpdateSubmissionInfo) error{
-	update_submission := models.ExcerciseSubmission{
-		Status: submission_data.Status,
-		Marking: submission_data.Marking,
-		Result: submission_data.Result,
-		ErrorMessage: submission_data.ErrorMessage,
-	}
+func (repo *ExerciseSubmissionRepository) UpdateSubmission(submissionData *models.UpdateSubmissionInfo) error {
+    tx := repo.DB.Begin()
+    if tx.Error != nil {
+        return utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR, "failed to begin transaction", tx.Error.Error())
+    }
 
-	if err := excerciseSubmissionRepository.DB.Model(&models.ExcerciseSubmission{}).Where("submission_id = ?", submission_data.SubmissionID).Updates(update_submission).Error; err != nil {
-		excerciseSubmissionRepository.DB.Rollback()
-		return utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to update submission", err.Error())
-	}
+    defer func() {
+        if r := recover(); r != nil {
+            tx.Rollback()
+        }
+    }()
 
-	return nil
+    update_submission := models.ExerciseSubmission{
+        Status:       submissionData.Status,
+        Marking:      submissionData.Marking,
+        Result:       submissionData.Result,
+        ErrorMessage: submissionData.ErrorMessage,
+    }
+
+    if err := tx.Model(&models.ExerciseSubmission{}).
+        Where("submission_id = ?", submissionData.SubmissionID).
+        Updates(update_submission).Error; err != nil {
+        tx.Rollback()
+        return utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR, "failed to update submission", err.Error())
+    }
+
+    if err := tx.Commit().Error; err != nil {
+        return utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR, "failed to commit transaction", err.Error())
+    }
+
+    return nil
 }

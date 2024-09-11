@@ -93,7 +93,6 @@ func pythonConsumer(db_pool *gorm.DB, pubsub *redis.Client, rabbit *amqp.Connect
 				service.AddAndUpdateTestCase(ch,db_pool,msg,msgBody,pubsub)
 				msg.Ack(true)
 			case "exercise-submit":
-				//TODO implement with new database
 				service.RunSubmission(ch,db_pool,msg,msgBody,pubsub)
 			default:
 				fmt.Printf("job_type not wtf")

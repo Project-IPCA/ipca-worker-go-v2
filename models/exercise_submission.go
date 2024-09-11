@@ -1,32 +1,33 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-type ExcerciseSubmission struct {
-	SubmissionID      int            `gorm:"column:submission_id;primaryKey;autoIncrement"`
-	StuID             int            `gorm:"column:stu_id"`
-	ExerciseID        int            `gorm:"column:exercise_id"`
-	Status            string         `gorm:"column:status;type:enum('accepted','wrong_answer','pending','rejected','error');default:'pending'"`
-	SourcecodeFilename string         `gorm:"column:sourcecode_filename;type:varchar(40)"`
-	Marking           int            `gorm:"column:marking"`
-	TimeSubmit        *time.Time      `gorm:"column:time_submit;default:CURRENT_TIMESTAMP"`
-	InfLoop           *string         `gorm:"column:inf_loop;type:enum('Yes','No')"`
-	Output            *string         `gorm:"column:output;type:varchar(16384)"`
-	Result            *json.RawMessage      `gorm:"column:result;type:json"`
-	ErrorMessage      *string         `gorm:"column:error_message;type:mediumtext"`
+type ExerciseSubmission struct {
+	SubmissionID        uuid.UUID    `gorm:"type:varchar(36);primary_key;column:submission_id"`
+	StuID               uuid.UUID    `gorm:"type:varchar(36);not null;column:stu_id"`
+	ExerciseID          uuid.UUID    `gorm:"type:varchar(36);not null;column:exercise_id"`
+	Status              string    `gorm:"type:enum('ACCEPTED','PENDING');not null;default:'PENDING';column:status"`
+	SourcecodeFilename  string    `gorm:"type:varchar(40);not null;column:sourcecode_filename"`
+	Marking             int       `gorm:"type:int;not null;default:0;column:marking"`
+	TimeSubmit          time.Time `gorm:"type:datetime;default:CURRENT_TIMESTAMP;column:time_submit"`
+	IsInfLoop           *bool     `gorm:"type:tinyint(1);column:is_inf_loop"`
+	Output              *string   `gorm:"type:text;column:output"`
+	Result              *string   `gorm:"type:json;column:result"`
+	ErrorMessage        *string   `gorm:"type:mediumtext;column:error_message"`
 }
 
-func (ExcerciseSubmission) TableName() string {
-	return "exercise_submission"
+func (ExerciseSubmission) TableName() string{
+	return "exercise_submissions"
 }
 
 type UpdateSubmissionInfo struct {
-	SubmissionID      int         
+	SubmissionID      uuid.UUID      
 	Status            string    
 	Marking           int      
-	Result            *json.RawMessage
+	Result            *string
 	ErrorMessage      *string
 }
