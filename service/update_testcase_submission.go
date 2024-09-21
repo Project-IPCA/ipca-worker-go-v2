@@ -33,15 +33,19 @@ func AddAndUpdateTestCase(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Deli
 
 func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 	exerciseTestcaseRepo := repositories.NewExcerciseTestCaseRePository(db_pool)
+	labExerciseRepo := repositories.NewLabExerciseRePository(db_pool)
+
+	exerciseUuid,err := uuid.Parse(*msgBody.ExcerciseID)
+	if(err!=nil){
+		return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert exercise uuid", err.Error())
+	}
+	var labExercise models.LabExercise
+	labExerciseRepo.GetLabExerciseById(&labExercise,exerciseUuid)
 	if(len(msgBody.TestCaseList)>0){
 		for i:=0; i<len(msgBody.TestCaseList); i++ {
 			testcaseUuid,err := uuid.Parse(msgBody.TestCaseList[i].TestCaseID)
 			if(err!=nil){
 				return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert testcase uuid", err.Error())
-			}
-			exerciseUuid,err := uuid.Parse(*msgBody.ExcerciseID)
-			if(err!=nil){
-				return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR,"failed to convert exercise uuid", err.Error())
 			}
 			result, err := utils.RunPythonScript(msgBody.TestCaseList[i], msgBody.SourceCode)
 			if err != nil {
@@ -101,8 +105,9 @@ func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 
 				err = exerciseTestcaseRepo.UpdateTestCase(&testCaseData,exerciseUuid)
 				if(err != nil){
-					utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to write file", err.Error())
+					utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR,"failed to update testcase to db", err.Error())
 				}
+				labExerciseRepo.UpdateExerciseTestcaseEnum(&labExercise,"YES")
 			}
 		}
 	}
