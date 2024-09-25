@@ -179,6 +179,8 @@ func compileCode (db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activ
 		outputStr := string(jsonData)
 		status := "wrong_answer";
 		if(studentMarking == 2){
+			studentAssignItemRepo := repositories.NewStudentAssignChapterItemRepository(db_pool)
+			studentAssignItemRepo.UpdateStudentAssignItemMarking(msgBody.StudentId, msgBody.ChapterId,msgBody.ItemId,studentMarking)
 			status = "accepted";
 		}
 

@@ -14,6 +14,9 @@ type ReciveMessage struct {
 	ExcerciseID *string `json:"exercise_id"`
 	SourceCode string `json:"sourcecode"`
 	TestCaseList []TestCase `json:"testcase_list"`
+	ChapterId string `json:"chapter_id"`
+	ItemId int	`json:"item_id"`
+	StudentId string `json:"stu_id"`
 }
 
 type TestCase struct{
