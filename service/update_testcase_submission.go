@@ -22,7 +22,7 @@ func AddAndUpdateTestCase(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Deli
 		channel.Nack(msg.DeliveryTag,false,false)
 		return
 	}
-	err = publisher.PublishMessage(fmt.Sprintf("submission-result:%s", msgBody.JobID),"done")
+	err = publisher.PublishMessage(fmt.Sprintf("testcase-result:%s", msgBody.JobID),"done")
 	if err != nil {
 		fmt.Println("Error publishing to Redis:", err)
 		return
