@@ -7,13 +7,13 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-func RabbitMQClient(cfg *config.Config) *amqp.Connection {
+func RabbitMQClient(cfg *config.Config) (*amqp.Connection,error) {
 	url := fmt.Sprintf("amqp://%s:%s@%s:%s/", cfg.RabbitMQ.User, cfg.RabbitMQ.Password, cfg.RabbitMQ.Host, cfg.RabbitMQ.Port)
 
 	conn, err := amqp.Dial(url)
 	if err != nil {
-		panic("Failed to connect to RabbitMQ: " + err.Error())
+		return nil,fmt.Errorf("Failed to connect to RabbitMQ : %v" ,err.Error())
 	}
 
-	return conn
+	return conn,nil
 }
