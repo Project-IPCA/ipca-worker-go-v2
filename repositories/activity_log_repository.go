@@ -41,6 +41,7 @@ func (activityLogRepository ActivityLogRepository)AddSubmissionLog(log_data *mod
 		Agent: &log_data.Agent,
 		PageName: log_data.PageName,
 		Action: string(action_str),
+		RemotePort: &log_data.RemotePort,
 	}	
 
 	if err := activityLogRepository.DB.Create(&add_Log).Error; err != nil {

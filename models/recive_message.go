@@ -38,6 +38,7 @@ type LogDataType struct{
 	Agent string `json:"agent"`
 	PageName string `json:"page_name"`
 	Actoin ActionData `json:"action"`
+	RemotePort int `json:"remote_port"`
 }
 
 type ActionData struct{
