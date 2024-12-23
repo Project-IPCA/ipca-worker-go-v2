@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/Project-IPCA/ipca-worker-go-v2/models"
 	"github.com/Project-IPCA/ipca-worker-go-v2/utils"
@@ -41,6 +42,8 @@ func (activityLogRepository ActivityLogRepository)AddSubmissionLog(log_data *mod
 		Agent: &log_data.Agent,
 		PageName: log_data.PageName,
 		Action: string(action_str),
+		RemotePort: &log_data.RemotePort,
+		Timestamp: time.Now(),
 	}	
 
 	if err := activityLogRepository.DB.Create(&add_Log).Error; err != nil {

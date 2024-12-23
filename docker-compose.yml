@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   ipca-worker-go-v2:
     container_name: ipca-worker-go-v2
