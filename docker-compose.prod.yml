@@ -2,9 +2,8 @@ services:
   ipca-worker-go-v2:
     container_name: ipca-worker-go-v2
     build: .
-    restart: on-failure
+    restart: unless-stopped
     volumes:
-      - ./:/app/
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     env_file:
       - .env
