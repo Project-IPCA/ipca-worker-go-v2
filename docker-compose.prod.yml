@@ -5,8 +5,22 @@ services:
     restart: unless-stopped
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
-    env_file:
-      - .env
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DRIVER: ${DB_DRIVER}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_USER: ${REDIS_USER}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_QUEUENAME: ${RABBITMQ_QUEUENAME}
     networks:
       - ipca-stack
     privileged: true
@@ -14,6 +28,10 @@ services:
       - ALL
     security_opt:
       - seccomp:unconfined
+    depends_on:
+      - ipca-mysql
+      - rabbitmq
+      - ipca-api
 
 networks:
   ipca-stack:
