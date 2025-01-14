@@ -29,7 +29,7 @@ pipeline {
                                 sh "cat ${env_file} > .env"
                                 sh "cd ipca-worker-go-v2"
                                 sh "git fetch"
-                                sh "git pull origin master"
+                                sh "git pull origin main"
                                 sh "cd .."
                                 sh "docker compose -f ${COMPOSE_FILE} up -d --build ${BUILD_OPTIONS}"
                             }
