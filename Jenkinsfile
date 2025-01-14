@@ -1,38 +1,44 @@
 pipeline {
     agent none
+    environment {
+        CREDENTIALS_ID = "${env.BRANCH_NAME == 'develop' ? 'worker-dev' : 'prod'}"
+        COMPOSE_FILE = "${env.BRANCH_NAME == 'develop' ? 'docker-compose.dev.yml' : 'docker-compose.yml'}"
+        BUILD_OPTIONS = "${env.BRANCH_NAME == 'develop' ? '' : 'ipca-worker-go-v2 --no-deps'}"
+        WORKSPACE_DIR = "${env.BRANCH_NAME == 'develop' ? '' : '/ipca/ipca-system'}"
+        AGENT_NODE = "${env.BRANCH_NAME == 'develop' ? 'develop-agent' : 'master-agent'}"
+    }
+    options{
+        skipDefaultCheckout()
+    }
     stages {
-        stage('Setup Environment') {
+        stage('Build and Deploy') {
+            agent { 
+                label "${AGENT_NODE}"
+            }
             steps {
                 script {
-                    echo "BRANCH_NAME: ${env.BRANCH_NAME}"
-                    if (env.BRANCH_NAME == 'main') {
-                        agent_label = 'master-agent'
-                        docker_compose_file = 'docker-compose.prod.yml'
-                        credentialsId = 'worker-prod'
-                    } else if (env.BRANCH_NAME == 'develop') {
-                        agent_label = 'develop-agent'
-                        docker_compose_file = 'docker-compose.dev.yml'
-                        credentialsId = 'worker-dev'
-                    } else {
-                        error "Branch ${env.BRANCH_NAME} is not configured!"
+                    if(env.BRANCH_NAME == 'develop') {
+                        checkout scm
+                    }
+                    withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'env_file')]) {
+                        if (env.BRANCH_NAME == 'develop') {
+                                sh "cat ${env_file} > .env"
+                                sh "docker compose -f ${COMPOSE_FILE} up -d --build"
+                        } else {
+                            dir("${WORKSPACE_DIR}") {
+                                sh "cat ${env_file} > .env"
+                                sh "cd ipca-worker-go-v2"
+                                sh "git fetch"
+                                sh "git pull origin main"
+                                sh "cd .."
+                                sh "docker compose -f ${COMPOSE_FILE} up -d --build ${BUILD_OPTIONS}"
+                            }
+                        }
                     }
                 }
             }
         }
-        
-        stage('Build and Deploy') {
-            agent { label agent_label }
-            steps {
-                withCredentials([file(credentialsId: credentialsId, variable: 'env_file')]) {
-                    // Set environment variables
-                    sh "cat ${env_file} > .env"
-                    // Start services
-                    sh "docker compose -f ${docker_compose_file} up -d --build"
-                }
-            }
-        }
     }
-
     post {
         always {
             echo "Pipeline finished for branch: ${env.BRANCH_NAME}"
