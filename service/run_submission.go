@@ -125,11 +125,6 @@ func compileCode(db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activi
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
 	excerciseSubmissionRepo := repositories.NewExerciseSubmissionRePository(db_pool)
 
-	if err != nil {
-		fmt.Println("fail to convert to int")
-		return nil, utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR, "failed to convert", err.Error())
-	}
-
 	testcaseResult := []TestCaseResult{}
 	newAction := msgBody.LogData.Actoin
 	insertedLog := models.ActivityLog{}
