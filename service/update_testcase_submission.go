@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/Project-IPCA/ipca-worker-go-v2/models"
 	"github.com/Project-IPCA/ipca-worker-go-v2/redis_client"
@@ -98,8 +97,7 @@ func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 					return utils.NewAppError(appErr.Name,appErr.Error(), appErr.Stdout)
 				}
 			}else{
-				output := strings.TrimSpace(result)
-				fmt.Println("output : " + output)
+				fmt.Println("output : " + result)
 				testCaseData := models.ExerciseTestcase{
 					TestcaseID: &testcaseUuid,
 					ExerciseID: exerciseUuid,
@@ -108,7 +106,7 @@ func compileCodeTestcase (db_pool *gorm.DB, msgBody models.ReciveMessage) error{
 					IsActive: &msgBody.TestCaseList[i].Active,
 					IsShowStudent: &msgBody.TestCaseList[i].ShowToStudent,
 					TestcaseNote: &msgBody.TestCaseList[i].TestCaseNote,
-					TestcaseOutput: &output,
+					TestcaseOutput: &result,
 					TestcaseError: &testcaseEmpty,
 				}
 
