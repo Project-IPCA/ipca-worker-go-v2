@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -125,11 +124,6 @@ func compileCode(db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activi
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
 	excerciseSubmissionRepo := repositories.NewExerciseSubmissionRePository(db_pool)
 
-	if err != nil {
-		fmt.Println("fail to convert to int")
-		return nil, utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR, "failed to convert", err.Error())
-	}
-
 	testcaseResult := []TestCaseResult{}
 	newAction := msgBody.LogData.Actoin
 	insertedLog := models.ActivityLog{}
@@ -144,15 +138,15 @@ func compileCode(db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activi
 					return nil, utils.NewAppError(appErr.Name, appErr.Error(), appErr.Stdout)
 				}
 			}
-			passed := strings.TrimSpace(result) == strings.TrimSpace(testcase.TestCaseOutput)
+			passed := result == testcase.TestCaseOutput
 			fmt.Printf("Testcase %d: %v\n", i+1, passed)
 
 			testcaseResult = append(testcaseResult, TestCaseResult{
 				TestCaseNo:    i + 1,
 				IsPassed:      passed,
 				ShowToStudent: testcase.ShowToStudent,
-				Expected:      strings.TrimSpace(testcase.TestCaseOutput),
-				Actual:        strings.TrimSpace(result),
+				Expected:      testcase.TestCaseOutput,
+				Actual:        result,
 			})
 		}
 
@@ -214,9 +208,9 @@ func compileCode(db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.Activi
 			fmt.Println("Error running Python script:", err)
 			return nil, utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR, "Error running Python script", err.Error())
 		}
-		fmt.Println("Output : ", strings.TrimSpace(result))
+		fmt.Println("Output : ", result)
 
-		jsonData, err := json.Marshal(strings.TrimSpace(result))
+		jsonData, err := json.Marshal(result)
 		if err != nil {
 			fmt.Println("Error marshalling testcaseResult:", err)
 			return nil, utils.NewAppError(utils.ERROR_NAME.DATABASE_ERROR, "Error marshalling testcaseResult", err.Error())
