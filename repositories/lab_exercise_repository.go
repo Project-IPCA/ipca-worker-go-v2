@@ -16,10 +16,10 @@ func NewLabExerciseRePository(db *gorm.DB) *LabExerciseRepository {
 	}
 }
 
-func (labExerciseRepo *LabExerciseRepository) GetLabExerciseById(labExercise *models.LabExercise,exerciseId uuid.UUID) {
-	labExerciseRepo.DB.Where("exercise_id",exerciseId).Find(labExercise)
+func (labExerciseRepo *LabExerciseRepository) GetLabExerciseById(labExercise *models.LabExercise, exerciseId uuid.UUID) {
+	labExerciseRepo.DB.Where("exercise_id", exerciseId).Find(labExercise)
 }
 
-func (labExerciseRepo *LabExerciseRepository) UpdateExerciseTestcaseEnum(labExercise *models.LabExercise,testcaseEnum string) {
-	labExerciseRepo.DB.Model(labExercise).Update("testcase" , testcaseEnum)
+func (labExerciseRepo *LabExerciseRepository) UpdateExerciseTestcaseEnum(labExercise *models.LabExercise, testcaseEnum string) {
+	labExerciseRepo.DB.Model(labExercise).Update("testcase", testcaseEnum)
 }

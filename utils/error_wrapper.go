@@ -6,16 +6,16 @@ import (
 )
 
 var ERROR_NAME = struct {
-	RUNTIME_ERROR           string
-	TIMEOUT_ERROR           string
-	OUTPUT_LIMIT_EXCEEDED   string
-	MEMORY_LIMIT_EXCEEDED   string
-	DATABASE_ERROR          string
-	RABBITMQ_ERROR          string
-	SERVER_ERROR            string
-	NO_OUTPUT_PRODUCED      string
-	PUBLISH_ERROR           string
-	FUNCTION_ERROR			string
+	RUNTIME_ERROR         string
+	TIMEOUT_ERROR         string
+	OUTPUT_LIMIT_EXCEEDED string
+	MEMORY_LIMIT_EXCEEDED string
+	DATABASE_ERROR        string
+	RABBITMQ_ERROR        string
+	SERVER_ERROR          string
+	NO_OUTPUT_PRODUCED    string
+	PUBLISH_ERROR         string
+	FUNCTION_ERROR        string
 }{
 	RUNTIME_ERROR:         "RuntimeError",
 	TIMEOUT_ERROR:         "TimeoutError",
@@ -26,7 +26,7 @@ var ERROR_NAME = struct {
 	SERVER_ERROR:          "ServerError",
 	NO_OUTPUT_PRODUCED:    "NoOutputProduced",
 	PUBLISH_ERROR:         "PublishError",
-	FUNCTION_ERROR:		"FunctionError",
+	FUNCTION_ERROR:        "FunctionError",
 }
 
 type AppError struct {
@@ -36,7 +36,7 @@ type AppError struct {
 }
 
 func (e *AppError) Error() string {
-	return fmt.Sprintf("%s: %s\nstdout: %s", e.Name, e.Err.Error(),e.Stdout)
+	return fmt.Sprintf("%s: %s\nstdout: %s", e.Name, e.Err.Error(), e.Stdout)
 }
 
 func NewAppError(name, message, stdout string) *AppError {
