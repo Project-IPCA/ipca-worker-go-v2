@@ -44,7 +44,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 		if ok && (appErr.Name == utils.ERROR_NAME.DATABASE_ERROR || appErr.Name == utils.ERROR_NAME.FUNCTION_ERROR) {
 			channel.Nack(msg.DeliveryTag, false, false)
 		} else {
-			newAction := msgBody.LogData.Actoin
+			newAction := &msgBody.LogData.Actoin
 
 			var output interface{}
 
