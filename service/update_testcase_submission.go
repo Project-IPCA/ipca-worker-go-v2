@@ -51,7 +51,14 @@ func compileCodeTestcase(db_pool *gorm.DB, msgBody models.ReciveMessage) error {
 			if err != nil {
 				return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR, "failed to convert testcase uuid", err.Error())
 			}
-			result, err := utils.RunPythonScript(msgBody.TestCaseList[i], msgBody.SourceCode)
+			var result string
+			if msgBody.Language == utils.LanguageList.Python {
+				result, err = utils.RunPythonScript(msgBody.TestCaseList[i], msgBody.SourceCode)
+			} else if msgBody.Language == utils.LanguageList.C {
+				result, err = utils.RunCScript(msgBody.TestCaseList[i], msgBody.SourceCode)
+			} else {
+				return utils.NewAppError("UnsupportedLanguage", "The provided language is not supported", "")
+			}
 			if err != nil {
 				appErr, ok := err.(*utils.AppError)
 				if ok {

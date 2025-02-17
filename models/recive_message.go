@@ -11,6 +11,7 @@ type ReciveMessage struct {
 	ChapterId    string      `json:"chapter_id"`
 	ItemId       int         `json:"item_id"`
 	StudentId    string      `json:"stu_id"`
+	Language     string      `json:"language"`
 }
 
 type TestCase struct {
