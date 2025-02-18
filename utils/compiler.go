@@ -59,25 +59,19 @@ func RunCScript(testcase models.TestCase, sourceCode string) (string, error) {
 	combinedCode := string(runnerContent) + "\n" + updatedSourceCode
 
 	combinedCodeFileName := fmt.Sprintf("%s.c", uuid.New().String())
-	err = os.WriteFile(combinedCodeFileName, []byte(strings.TrimSpace(combinedCode)), 0644)
+	sandboxcombinedCodePath := filepath.Join(sandboxPath, "box", combinedCodeFileName)
+	err = os.WriteFile(sandboxcombinedCodePath, []byte(strings.TrimSpace(combinedCode)), 0644)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file in: %v", err)
 	}
 
-	buildCommand := fmt.Sprintf("gcc %s -o program",combinedCodeFileName)
-	_,err = ExecuteCommand(buildCommand)
+	buildCommand := fmt.Sprintf("gcc %s -o program", combinedCodeFileName)
+	_, err = ExecuteCommand(filepath.Join(sandboxPath, "box"), buildCommand)
 	if err != nil {
 		os.Remove(combinedCodeFileName)
 		return "", err
 	}
 	defer os.Remove(combinedCodeFileName)
-
-	sandboxProgramPath := filepath.Join(sandboxPath, "box", "program")
-	moveCommand := fmt.Sprintf("mv ./program %s",sandboxProgramPath)
-	_,err = ExecuteCommand(moveCommand)
-	if err!=nil{
-		return "", fmt.Errorf("failed to copy runner.py to sandbox: %v", err)
-	}
 
 	testcaseFileName := fmt.Sprintf("%s.txt", uuid.New().String())
 	sandboxTestcasePath := filepath.Join(sandboxPath, "box", testcaseFileName)
@@ -85,7 +79,7 @@ func RunCScript(testcase models.TestCase, sourceCode string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create testcase file in sandbox: %v", err)
 	}
-	
+
 	runCommand := fmt.Sprintf("./program %s", testcaseFileName)
 	return ExecuteCommandWithIsolate(sandboxPath, runCommand)
 }

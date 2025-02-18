@@ -121,11 +121,12 @@ func ExecuteCommandWithIsolate(sandboxPath, command string) (string, error) {
 	}
 }
 
-func ExecuteCommand(command string) (string, error) {
+func ExecuteCommand(path,command string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIME_LIMIT)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx , "bash", "-c", command)
+	cmd.Dir = filepath.Join(path)
 	cmdOutput, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", HandleExecError(err,err.Error(),string(cmdOutput))

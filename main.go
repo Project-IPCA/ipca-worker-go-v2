@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"C"
 	"github.com/Project-IPCA/ipca-worker-go-v2/config"
 	"github.com/Project-IPCA/ipca-worker-go-v2/db"
 	"github.com/Project-IPCA/ipca-worker-go-v2/models"
@@ -14,7 +15,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
-	"C"
 )
 
 func main() {
@@ -46,11 +46,11 @@ func pythonConsumer(db_pool *gorm.DB, pubsub *redis.Client, cfg *config.Config) 
 
 	_, err = ch.QueueDeclare(
 		cfg.RabbitMQ.QueueName,
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to declare queue: %v", err)
@@ -63,12 +63,12 @@ func pythonConsumer(db_pool *gorm.DB, pubsub *redis.Client, cfg *config.Config) 
 
 	msgs, err := ch.Consume(
 		cfg.RabbitMQ.QueueName,
-		"",    // consumer
-		false, // auto-ack
-		false, // exclusive
-		false, // no-local
-		false, // no-wait
-		nil,   // args
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to start consuming: %v", err)
@@ -89,7 +89,6 @@ func pythonConsumer(db_pool *gorm.DB, pubsub *redis.Client, cfg *config.Config) 
 
 		case err := <-channelCloseChan:
 			return fmt.Errorf("channel closed: %v", err)
-
 		case msg, ok := <-msgs:
 			if !ok {
 				return fmt.Errorf("message channel closed")
@@ -113,9 +112,11 @@ func processMessage(ch *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, pubsu
 
 	switch msgBody.JobType {
 	case "upsert-testcase":
-		service.AddAndUpdateTestCase(ch, db_pool, msg, msgBody, pubsub)
+		err := service.AddAndUpdateTestCase(ch, db_pool, msg, msgBody, pubsub)
+		return err
 	case "exercise-submit":
-		service.RunSubmission(ch, db_pool, msg, msgBody, pubsub)
+		err := service.RunSubmission(ch, db_pool, msg, msgBody, pubsub)
+		return err
 	default:
 		fmt.Printf("Unknown job type: %s\n", msgBody.JobType)
 		msg.Ack(false)

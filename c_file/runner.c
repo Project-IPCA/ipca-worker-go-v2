@@ -6,7 +6,7 @@
 
 int user_main(void);
 int custom_scanf(const char *str, ...);
-void read_input_file(const char *filename);
+int read_input_file(const char *filename);
 void cleanup(void);
 
 int custom_scanf(const char *str, ...)
@@ -39,11 +39,11 @@ int custom_scanf(const char *str, ...)
             }
             else if (ch1 == 'c')
             {
-                char c; 
-                while ((c = fgetc(stdin)) == '\n'
-                       || c == ' ' || c == EOF) { 
-                } 
-                *va_arg(ptr, char*) = c; 
+                char c;
+                while ((c = fgetc(stdin)) == '\n' || c == ' ' || c == EOF)
+                {
+                }
+                *va_arg(ptr, char *) = c;
                 printf("%c ", c);
             }
             else if (ch1 == 'f')
@@ -99,14 +99,15 @@ int custom_scanf(const char *str, ...)
     return 0;
 }
 
-void read_input_file(const char *filename)
+int read_input_file(const char *filename)
 {
     freopen(filename, "r", stdin);
     if (!stdin)
     {
         fprintf(stderr, "Error: Cannot open input file %s\n", filename);
-        exit(1);
+        return 1;
     }
+    return 0;
 }
 
 void cleanup(void)
@@ -122,7 +123,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    read_input_file(argv[1]);
+    if (read_input_file(argv[1]) != 0)
+    {
+        return 1;
+    }
     int result = user_main();
     cleanup();
     return result;

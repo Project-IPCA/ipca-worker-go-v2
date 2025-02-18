@@ -31,7 +31,7 @@ type TestCaseResult struct {
 	Actual        string `json:"actual"`
 }
 
-func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, msgBody models.ReciveMessage, redisClient *redis.Client) {
+func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, msgBody models.ReciveMessage, redisClient *redis.Client) error{
 	publisher := redis_client.NewRedisAction(redisClient)
 	activityLogRepo := repositories.NewActivityLogRePository(db_pool)
 	excerciseSubmissionRepo := repositories.NewExerciseSubmissionRePository(db_pool)
@@ -57,7 +57,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 			resultJson, err := json.Marshal(output)
 			if err != nil {
 				fmt.Println("Error marshalling testcaseResult:", err)
-				return
+				return err
 			}
 			outputStr := string(resultJson)
 			errorMessage := string(appErr.Err.Error())
@@ -67,7 +67,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 			submissionUuid, err := uuid.Parse(*msgBody.SubmissionID)
 			if err != nil {
 				fmt.Println("fail to convert uuid")
-				return
+				return err
 			}
 
 			submission := models.UpdateSubmissionInfo{
@@ -86,7 +86,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 			if err != nil {
 				channel.Nack(msg.DeliveryTag, false, false)
 				fmt.Println("Error updating submission:", err)
-				return
+				return err
 			}
 
 			tempLog, err := activityLogRepo.AddSubmissionLog(saveLog)
@@ -94,7 +94,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 			if err != nil {
 				channel.Nack(msg.DeliveryTag, false, false)
 				fmt.Println("Error adding submission log:", err)
-				return
+				return err
 			}
 		}
 	}
@@ -102,7 +102,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 	err = publisher.PublishMessage(fmt.Sprintf("submission-result:%s", msgBody.JobID), "done")
 	if err != nil {
 		fmt.Println("Error publishing to Redis:", err)
-		return
+		return err
 	}
 	if publishLog != nil {
 		err = publisher.PublishMessage(fmt.Sprintf("logs:%s", msgBody.LogData.GroupID), publishLog)
@@ -113,6 +113,7 @@ func RunSubmission(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, m
 
 	fmt.Println("FINISHED RUNNING")
 	channel.Ack(msg.DeliveryTag, false)
+	return nil
 }
 
 func compileCode(db_pool *gorm.DB, msgBody models.ReciveMessage) (*models.ActivityLog, error) {
