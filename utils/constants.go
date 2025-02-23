@@ -15,3 +15,13 @@ var ExerciseStatus = ExerciseStatusStruct{
 	Rejected:    "REJECTED",
 	Error:       "ERROR",
 }
+
+type LanguageStruct struct {
+	Python string
+	C      string
+}
+
+var LanguageList = LanguageStruct{
+	Python: "PYTHON",
+	C:      "C",
+}

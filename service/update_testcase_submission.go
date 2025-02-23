@@ -14,24 +14,25 @@ import (
 	"gorm.io/gorm"
 )
 
-func AddAndUpdateTestCase(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, msgBody models.ReciveMessage, redisClient *redis.Client) {
+func AddAndUpdateTestCase(channel *amqp.Channel, db_pool *gorm.DB, msg amqp.Delivery, msgBody models.ReciveMessage, redisClient *redis.Client) error {
 	publisher := redis_client.NewRedisAction(redisClient)
 	err := compileCodeTestcase(db_pool, msgBody)
 	if err != nil {
 		appErr, ok := err.(*utils.AppError)
 		if ok && (appErr.Name == utils.ERROR_NAME.DATABASE_ERROR || appErr.Name == utils.ERROR_NAME.FUNCTION_ERROR) {
 			channel.Nack(msg.DeliveryTag, false, false)
-			return
+			return err
 		}
 	}
 	err = publisher.PublishMessage(fmt.Sprintf("testcase-result:%s", msgBody.JobID), "done")
 	if err != nil {
 		fmt.Println("Error publishing to Redis:", err)
 		channel.Nack(msg.DeliveryTag, false, false)
-		return
+		return err
 	}
 	fmt.Println("FINISHED RUNNING")
 	channel.Ack(msg.DeliveryTag, false)
+	return nil
 }
 
 func compileCodeTestcase(db_pool *gorm.DB, msgBody models.ReciveMessage) error {
@@ -51,7 +52,14 @@ func compileCodeTestcase(db_pool *gorm.DB, msgBody models.ReciveMessage) error {
 			if err != nil {
 				return utils.NewAppError(utils.ERROR_NAME.FUNCTION_ERROR, "failed to convert testcase uuid", err.Error())
 			}
-			result, err := utils.RunPythonScript(msgBody.TestCaseList[i], msgBody.SourceCode)
+			var result string
+			if msgBody.Language == utils.LanguageList.Python {
+				result, err = utils.RunPythonScript(msgBody.TestCaseList[i], msgBody.SourceCode)
+			} else if msgBody.Language == utils.LanguageList.C {
+				result, err = utils.RunCScript(msgBody.TestCaseList[i], msgBody.SourceCode)
+			} else {
+				return utils.NewAppError("UnsupportedLanguage", "The provided language is not supported", "")
+			}
 			if err != nil {
 				appErr, ok := err.(*utils.AppError)
 				if ok {
