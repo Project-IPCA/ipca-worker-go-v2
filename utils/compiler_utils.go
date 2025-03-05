@@ -60,7 +60,7 @@ func ExecuteCommandWithIsolate(sandboxPath, command string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), TIME_LIMIT)
 	defer cancel()
 
-	isolateCmd := fmt.Sprintf("isolate --run --time=%d --wall-time=%d --extra-time=1 --mem=128000 -- %s --no-net",
+	isolateCmd := fmt.Sprintf("isolate --run --time=%d --wall-time=%d --extra-time=1 --mem=128000 -- %s",
 		int(TIME_LIMIT.Seconds()),
 		int(TIME_LIMIT.Seconds()),
 		command)
