@@ -1,11 +1,14 @@
 services:
   ipca-worker-go-v2:
     container_name: ipca-worker-go-v2
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
     restart: unless-stopped
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     environment:
+      TZ: Asia/Bangkok
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}

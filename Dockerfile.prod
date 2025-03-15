@@ -1,0 +1,77 @@
+# ---- Build Stage ----
+FROM golang:1.22.6-alpine3.20 as builder
+
+# Install necessary build dependencies
+RUN apk update && apk add --no-cache \
+    git python3 py3-pip bash \
+    build-base linux-headers libcap-dev \
+    asciidoc gcc make pkgconfig eudev-dev sudo libcap
+
+# Set the working directory
+WORKDIR /app
+
+# Clone isolate
+RUN git clone https://github.com/ioi/isolate.git /isolate
+
+# Modify isolate to work without systemd
+RUN sed -i 's/#include <systemd\/sd-daemon.h>/\/\/#include <systemd\/sd-daemon.h>/' /isolate/isolate-cg-keeper.c && \
+    sed -i 's/sd_notify/\/\/sd_notify/' /isolate/isolate-cg-keeper.c
+
+# Build and install isolate
+WORKDIR /isolate
+RUN make && make install
+
+# Set up isolate
+RUN addgroup -S isolate && adduser -S -G isolate isolate \
+    && mkdir -p /var/local/lib/isolate \
+    && chown -R isolate:isolate /var/local/lib/isolate \
+    && chmod 777 /var/local/lib/isolate
+
+# Set capabilities for isolate
+RUN setcap cap_sys_admin,cap_sys_chroot,cap_mknod,cap_net_admin+ep /usr/local/bin/isolate
+
+# Return to the app directory
+WORKDIR /app
+
+# Copy source code
+COPY . .
+
+# Build the Go application
+RUN go build -o main cmd/main.go
+
+# ---- Runtime Stage ----
+FROM alpine:3.20
+
+# Install necessary runtime dependencies
+RUN apk add --no-cache eudev libcap bash python3 gcc
+
+# Copy isolate from the builder stage
+COPY --from=builder /usr/local/bin/isolate /usr/local/bin/isolate
+COPY --from=builder /usr/local/etc/isolate /usr/local/etc/isolate
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+COPY --from=builder /usr/local/sbin/isolate-cg-keeper /usr/local/sbin/isolate-cg-keeper
+
+# Copy the python_files
+COPY --from=builder /app/python_file /app/python_file
+
+# Copy the c_files
+COPY --from=builder /app/c_file/runner.c /app/c_file/runner.c
+
+# Copy the built Go application
+COPY --from=builder /app/main /app/main
+
+
+# Set working directory
+WORKDIR /app
+
+# Set up isolate environment
+RUN addgroup -S isolate && adduser -S -G isolate isolate \
+    && mkdir -p /var/local/lib/isolate \
+    && chown -R isolate:isolate /var/local/lib/isolate \
+    && chmod 750 /var/local/lib/isolate
+
+# Set capabilities for isolate
+RUN setcap cap_sys_admin,cap_sys_chroot,cap_mknod,cap_net_admin+ep /usr/local/bin/isolate
+
+# Run the application
+CMD ["/app/main"]

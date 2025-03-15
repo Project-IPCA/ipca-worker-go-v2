@@ -3,7 +3,7 @@ pipeline {
     environment {
         CREDENTIALS_ID = "${env.BRANCH_NAME == 'develop' ? 'worker-dev' : 'prod'}"
         COMPOSE_FILE = "${env.BRANCH_NAME == 'develop' ? 'docker-compose.dev.yml' : 'docker-compose.yml'}"
-        BUILD_OPTIONS = "${env.BRANCH_NAME == 'develop' ? '' : 'ipca-worker-go-v2 --no-deps'}"
+        BUILD_OPTIONS = "ipca-worker-go-v2 --no-deps"
         WORKSPACE_DIR = "${env.BRANCH_NAME == 'develop' ? '' : '/ipca/ipca-system'}"
         AGENT_NODE = "${env.BRANCH_NAME == 'develop' ? 'develop-agent' : 'master-agent'}"
     }
@@ -23,7 +23,7 @@ pipeline {
                     withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'env_file')]) {
                         if (env.BRANCH_NAME == 'develop') {
                                 sh "cat ${env_file} > .env"
-                                sh "docker compose -f ${COMPOSE_FILE} up -d --build"
+                                sh "docker compose -f /home/fair/project/ipca/${COMPOSE_FILE} up -d --build ${BUILD_OPTIONS}"
                         } else {
                             dir("${WORKSPACE_DIR}") {
                                 sh "cat ${env_file} > .env"
