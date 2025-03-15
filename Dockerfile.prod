@@ -37,7 +37,7 @@ WORKDIR /app
 COPY . .
 
 # Build the Go application
-RUN go build -o main cmd/main.go
+RUN go build -o main main.go
 
 # ---- Runtime Stage ----
 FROM alpine:3.20
