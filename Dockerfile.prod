@@ -43,7 +43,7 @@ RUN go build -o main main.go
 FROM alpine:3.20
 
 # Install necessary runtime dependencies
-RUN apk add --no-cache eudev libcap bash python3 gcc
+RUN apk add --no-cache eudev libcap bash python3 gcc libc-dev
 
 # Copy isolate from the builder stage
 COPY --from=builder /usr/local/bin/isolate /usr/local/bin/isolate
